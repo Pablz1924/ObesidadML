@@ -5,59 +5,88 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import train_test_split
 
 # ------------------------------------------------------
-# 1. Cargar datos
+# 1. Cargar dataset
 # ------------------------------------------------------
 @st.cache_data
 def load_data():
-    df = pd.read_csv("ObesityDataSet_raw_and_data_sinthetic.csv")
-    return df
+    return pd.read_csv("ObesityDataSet_raw_and_data_sinthetic.csv")
 
 data = load_data()
 
 st.title("🧠 Clasificador de Obesidad con Perceptrón")
 
-st.write("Dataset cargado con éxito:")
-st.write(data.head())
-
 # ------------------------------------------------------
-# 2. Preparar datos (ajusta según tu dataset)
+# 2. Preparar datos
 # ------------------------------------------------------
-# Suponiendo que la columna objetivo se llama "NObeyesdad"
 X = data.drop("NObeyesdad", axis=1)
 y = data["NObeyesdad"]
 
-# Convertir categóricas en numéricas (si las hay)
+# Codificar variables categóricas
 X = pd.get_dummies(X)
 
-# Dividir train/test
+# Dividir datos
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# ------------------------------------------------------
-# 3. Entrenar perceptrón
-# ------------------------------------------------------
+# Entrenar modelo
 clf = MLPClassifier(hidden_layer_sizes=(50,), max_iter=1000, random_state=42)
 clf.fit(X_train, y_train)
 
 # ------------------------------------------------------
-# 4. Inputs del usuario
+# 3. Inputs del usuario
 # ------------------------------------------------------
-st.header("Introduce tus datos:")
+st.header("Introduce tus datos")
 
-# Aquí pon los inputs reales de tu dataset, ejemplo:
-genero = st.selectbox("Género", ["Male", "Female"])
-edad = st.number_input("Edad", min_value=1, max_value=100, value=25)
-peso = st.number_input("Peso (kg)", min_value=20.0, max_value=200.0, value=70.0)
-altura = st.number_input("Altura (m)", min_value=1.0, max_value=2.5, value=1.70)
+# Variables físicas
+gender = st.selectbox("Gender", ["Male", "Female"])
+age = st.number_input("Age", min_value=1, max_value=120, value=25)
+height = st.number_input("Height (m)", min_value=1.0, max_value=2.5, value=1.70)
+weight = st.number_input("Weight (kg)", min_value=20.0, max_value=200.0, value=70.0)
 
-# Crear dataframe con los datos del usuario
+# Hábitos alimenticios
+favc = st.selectbox("Frequent consumption of high caloric food (FAVC)", ["yes", "no"])
+fcvc = st.slider("Frequency of consumption of vegetables (FCVC)", 1, 3, 2)
+ncp = st.slider("Number of main meals (NCP)", 1, 4, 3)
+caec = st.selectbox("Consumption of food between meals (CAEC)", ["no", "Sometimes", "Frequently", "Always"])
+ch2o = st.slider("Consumption of water daily (CH2O)", 1, 3, 2)
+calc = st.selectbox("Consumption of alcohol (CALC)", ["no", "Sometimes", "Frequently", "Always"])
+smoke = st.selectbox("SMOKE", ["yes", "no"])
+scc = st.selectbox("Calories consumption monitoring (SCC)", ["yes", "no"])
+
+# Actividad física y tecnología
+faf = st.slider("Physical activity frequency (FAF)", 0, 3, 1)
+tue = st.slider("Time using technology devices (TUE)", 0, 2, 1)
+
+# Transporte
+mtrans = st.selectbox("Transportation used (MTRANS)", ["Automobile", "Motorbike", "Bike", "Public_Transportation", "Walking"])
+
+# Historial familiar
+family_history = st.selectbox("Family history with overweight", ["yes", "no"])
+
+# --------------------------------
+
+# ------------------------------------------------------
+# 4. Armar dataframe de entrada
+# ------------------------------------------------------
 entrada = pd.DataFrame([{
-    "Gender": genero,
-    "Age": edad,
-    "Weight": peso,
-    "Height": altura
+    "Gender": gender,
+    "Age": age,
+    "Height": height,
+    "Weight": weight,
+    "FAVC": favc,
+    "FCVC": fcvc,
+    "NCP": ncp,
+    "CAEC": caec,
+    "CH2O": ch2o,
+    "CALC": calc,
+    "SMOKE": smoke,
+    "SCC": scc,
+    "FAF": faf,
+    "TUE": tue,
+    "MTRANS": mtrans,
+    "family_history_with_overweight": family_history
 }])
 
-# Convertir categóricas igual que en el dataset
+# One-hot encoding igual que en el dataset
 entrada = pd.get_dummies(entrada)
 entrada = entrada.reindex(columns=X.columns, fill_value=0)
 
@@ -66,4 +95,4 @@ entrada = entrada.reindex(columns=X.columns, fill_value=0)
 # ------------------------------------------------------
 if st.button("Predecir"):
     pred = clf.predict(entrada)[0]
-    st.success(f"Predicción: {pred}")
+    st.success(f"Categoría de obesidad predicha: **{pred}**")
