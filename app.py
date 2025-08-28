@@ -1,98 +1,71 @@
 import streamlit as st
-import pandas as pd
+import joblib
 import numpy as np
-from sklearn.neural_network import MLPClassifier
-from sklearn.model_selection import train_test_split
 
-# ------------------------------------------------------
-# 1. Cargar dataset
-# ------------------------------------------------------
-@st.cache_data
-def load_data():
-    return pd.read_csv("ObesityDataSet_raw_and_data_sinthetic.csv")
+# Cargar el modelo entrenado
+modelo = joblib.load("modelo_obesidad.pkl")
 
-data = load_data()
+st.set_page_config(page_title="Predicción de Obesidad", layout="centered")
 
-st.title("🧠 Clasificador de Obesidad con Perceptrón")
+st.title("🧑‍⚕️ Predicción de Obesidad")
+st.write("Ingrese sus datos para predecir la categoría de obesidad según el modelo entrenado.")
 
-# ------------------------------------------------------
-# 2. Preparar datos
-# ------------------------------------------------------
-X = data.drop("NObeyesdad", axis=1)
-y = data["NObeyesdad"]
+# ==========================
+# Inputs del usuario
+# ==========================
 
-# Codificar variables categóricas
-X = pd.get_dummies(X)
-
-# Dividir datos
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-# Entrenar modelo
-clf = MLPClassifier(hidden_layer_sizes=(50,), max_iter=1000, random_state=42)
-clf.fit(X_train, y_train)
-
-# ------------------------------------------------------
-# 3. Inputs del usuario
-# ------------------------------------------------------
-st.header("Introduce tus datos")
-
-# Variables físicas
-gender = st.selectbox("Gender", ["Male", "Female"])
-age = st.number_input("Age", min_value=1, max_value=120, value=25)
-height = st.number_input("Height (m)", min_value=1.0, max_value=2.5, value=1.70)
-weight = st.number_input("Weight (kg)", min_value=20.0, max_value=200.0, value=70.0)
-
-# Hábitos alimenticios
-favc = st.selectbox("Frequent consumption of high caloric food (FAVC)", ["yes", "no"])
-fcvc = st.slider("Frequency of consumption of vegetables (FCVC)", 1, 3, 2)
-ncp = st.slider("Number of main meals (NCP)", 1, 4, 3)
-caec = st.selectbox("Consumption of food between meals (CAEC)", ["no", "Sometimes", "Frequently", "Always"])
-ch2o = st.slider("Consumption of water daily (CH2O)", 1, 3, 2)
-calc = st.selectbox("Consumption of alcohol (CALC)", ["no", "Sometimes", "Frequently", "Always"])
-smoke = st.selectbox("SMOKE", ["yes", "no"])
-scc = st.selectbox("Calories consumption monitoring (SCC)", ["yes", "no"])
-
-# Actividad física y tecnología
-faf = st.slider("Physical activity frequency (FAF)", 0, 3, 1)
-tue = st.slider("Time using technology devices (TUE)", 0, 2, 1)
-
-# Transporte
-mtrans = st.selectbox("Transportation used (MTRANS)", ["Automobile", "Motorbike", "Bike", "Public_Transportation", "Walking"])
+# Atributos físicos
+gender = st.selectbox("Género", ["Male", "Female"])
+age = st.slider("Edad", 5, 100, 25)
+height = st.slider("Altura (m)", 1.20, 2.20, 1.70)
+weight = st.slider("Peso (kg)", 30.0, 200.0, 70.0)
 
 # Historial familiar
-family_history = st.selectbox("Family history with overweight", ["yes", "no"])
+family_history = st.selectbox("Historial familiar con sobrepeso", ["yes", "no"])
 
-# --------------------------------
+# Hábitos alimenticios
+favc = st.selectbox("Consumo frecuente de comida alta en calorías (FAVC)", ["yes", "no"])
+fcvc = st.slider("Frecuencia de consumo de vegetales (FCVC)", 0.0, 3.0, 1.0)
+ncp = st.slider("Número de comidas principales al día (NCP)", 1, 6, 3)
+caec = st.selectbox("Consumo entre comidas (CAEC)", ["no", "Sometimes", "Frequently", "Always"])
+ch2o = st.slider("Consumo de agua diario (litros) (CH2O)", 0.0, 5.0, 2.0)
+calc = st.selectbox("Consumo de alcohol (CALC)", ["no", "Sometimes", "Frequently", "Always"])
+smoke = st.selectbox("¿Fuma? (SMOKE)", ["yes", "no"])
+scc = st.selectbox("Monitorea su consumo de calorías (SCC)", ["yes", "no"])
 
-# ------------------------------------------------------
-# 4. Armar dataframe de entrada
-# ------------------------------------------------------
-entrada = pd.DataFrame([{
-    "Gender": gender,
-    "Age": age,
-    "Height": height,
-    "Weight": weight,
-    "FAVC": favc,
-    "FCVC": fcvc,
-    "NCP": ncp,
-    "CAEC": caec,
-    "CH2O": ch2o,
-    "CALC": calc,
-    "SMOKE": smoke,
-    "SCC": scc,
-    "FAF": faf,
-    "TUE": tue,
-    "MTRANS": mtrans,
-    "family_history_with_overweight": family_history
-}])
+# Actividad física y tecnología
+faf = st.slider("Frecuencia de actividad física (FAF)", 0.0, 3.0, 1.0)
+tue = st.slider("Tiempo en dispositivos tecnológicos (horas) (TUE)", 0.0, 24.0, 4.0)
 
-# One-hot encoding igual que en el dataset
-entrada = pd.get_dummies(entrada)
-entrada = entrada.reindex(columns=X.columns, fill_value=0)
+# Transporte
+mtrans = st.selectbox("Medio de transporte (MTRANS)", ["Walking", "Bike", "Motorbike", "Public_Transportation", "Automobile"])
 
-# ------------------------------------------------------
-# 5. Predicción
-# ------------------------------------------------------
+# ==========================
+# Procesar inputs
+# ==========================
+
+def Categorico_a_numerico(valor, categorias):
+    return categorias.index(valor)
+
+# Mapear valores categóricos
+gender_val = Categorico_a_numerico(gender, ["Female", "Male"])
+family_val = Categorico_a_numerico(family_history, ["no", "yes"])
+favc_val = Categorico_a_numerico(favc, ["no", "yes"])
+caec_val = Categorico_a_numerico(caec, ["no", "Sometimes", "Frequently", "Always"])
+calc_val = Categorico_a_numerico(calc, ["no", "Sometimes", "Frequently", "Always"])
+smoke_val = Categorico_a_numerico(smoke, ["no", "yes"])
+scc_val = Categorico_a_numerico(scc, ["no", "yes"])
+mtrans_val = Categorico_a_numerico(mtrans, ["Automobile", "Bike", "Motorbike", "Public_Transportation", "Walking"])
+
+# Crear vector de entrada
+entrada = np.array([[gender_val, age, height, weight, 
+                     family_val, favc_val, fcvc, ncp, caec_val, 
+                     smoke_val, ch2o, scc_val, faf, tue, 
+                     calc_val, mtrans_val]])
+
+# ==========================
+# Predicción
+# ==========================
 if st.button("Predecir"):
-    pred = clf.predict(entrada)[0]
-    st.success(f"Categoría de obesidad predicha: **{pred}**")
+    pred = modelo.predict(entrada)
+    st.success(f"📊 Resultado de la predicción: **{pred[0]}**")
