@@ -149,8 +149,3 @@ nuevos_datos = [[1.0, 0.275, 0.400, 0.250, 0.0, 1.0, 0.6, 0.4, 0.2, 0.0, 0.8, 0.
 
 predicciones_nuevas = modelo.predict(nuevos_datos)
 print(predicciones_nuevas)
-
-from google.colab import files
-uploaded = files.upload()
-
-!jupyter nbconvert --to script Perceptron_obesidad.ipynb
